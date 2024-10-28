@@ -2,7 +2,6 @@
 using Okala.Cryptocurrency.Domain.Common;
 using Okala.Cryptocurrency.Domain.Common.Utilities;
 using Okala.Cryptocurrency.Domain.DTO.Crypto;
-using Okala.Cryptocurrency.Infrastructure.Providers.Coinmarketcap.Models;
 using Okala.Cryptocurrency.Infrastructure.Providers.Exchangeratesapi.Models;
 
 namespace Okala.Cryptocurrency.Infrastructure.Providers.Exchangeratesapi
@@ -14,8 +13,9 @@ namespace Okala.Cryptocurrency.Infrastructure.Providers.Exchangeratesapi
         public async override Task<GetCurrentFeeSelectedDTO> GetCurrentFee(GetCurrentFeeDTO getCurrentFeeDTO, CancellationToken cancellationToken)
         {
             //await EnsureAuthenticated();
-            var response = await client.GetAsync(string.Format("latest?access_key={0}&symbols={1}",
-                providerAccessKey, string.Join(',', string.Join(',', getCurrentFeeDTO.Currency.Select(s => s.ToDisplay()))), cancellationToken), cancellationToken);
+            var response = await client.GetAsync(string.Format("latest?access_key={0}&symbols={1}&base={2}",
+                providerAccessKey, string.Join(',', string.Join(',', getCurrentFeeDTO.Currency.Select(s => s.ToDisplay()))),
+                getCurrentFeeDTO.Crypto.ToDisplay(), cancellationToken), cancellationToken);
             response.EnsureSuccessStatusCode();
             var stringResult = await response.Content.ReadAsStringAsync(cancellationToken);
             try
@@ -23,8 +23,9 @@ namespace Okala.Cryptocurrency.Infrastructure.Providers.Exchangeratesapi
                 var result = JsonConvert.DeserializeObject<ExchangeratesapiLatestResult>(stringResult);
                 return new GetCurrentFeeSelectedDTO
                 {
-                    Currencies = result.Rates.ToDictionary()
-                    .Where(c => c.Value != null).ToDictionary()
+                    Crypto = result?.Base,
+                    Currencies = result?.Rates.ToDictionary()
+                    .Where(c => c.Value != null && Convert.ToDouble(c.Value) > 0).ToDictionary()
                 };
             }
             catch (Exception e)

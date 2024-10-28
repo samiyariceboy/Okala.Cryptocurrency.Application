@@ -26,6 +26,7 @@ namespace Okala.Cryptocurrency.Infrastructure.Providers.Coinmarketcap
             {
                 Currencies = result.data.ToDictionary().Where(c => c.Value != null).ToDictionary()
 
+
             };
         }
 
